@@ -1086,6 +1086,9 @@ int main(int argc, char **argv)
 	else if (options->ppcg->target == PPCG_TARGET_OPENCL)
 		r = generate_opencl(ctx, options->ppcg, options->input,
 				options->output);
+/*--------------------------------------------------------------------------HIP routine entry-----------------------------------------------------------------*/
+	else if (options->ppcg->target == PPCG_TARGET_ROCm)
+		r = generate_cuda(ctx, options->ppcg, options->input);
 	else
 		r = generate_cpu(ctx, options->ppcg, options->input,
 				options->output);
