@@ -1088,7 +1088,7 @@ int main(int argc, char **argv)
 				options->output);
 /*--------------------------------------------------------------------------HIP routine entry-----------------------------------------------------------------*/
 	else if (options->ppcg->target == PPCG_TARGET_ROCm)
-		r = generate_cuda(ctx, options->ppcg, options->input);
+		r = generate_rocm(ctx, options->ppcg, options->input);
 	else
 		r = generate_cpu(ctx, options->ppcg, options->input,
 				options->output);

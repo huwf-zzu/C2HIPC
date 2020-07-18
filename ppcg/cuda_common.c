@@ -48,3 +48,35 @@ void cuda_close_files(struct cuda_info *info)
     fclose(info->kernel_h);
     fclose(info->host_c);
 }
+
+void rocm_open_files(struct rocm_info *info, const char *input)
+{
+    char name[PATH_MAX];
+    int len;
+
+    len = ppcg_extract_base_name(name, input);
+
+    strcpy(name + len, "_host.cu");
+    info->host_c = fopen(name, "w");
+
+    strcpy(name + len, "_kernel.cu");
+    info->kernel_c = fopen(name, "w");
+
+    strcpy(name + len, "_kernel.hu");
+    info->kernel_h = fopen(name, "w");
+    fprintf(info->host_c, "#include <assert.h>\n");
+    fprintf(info->host_c, "#include <stdio.h>\n");
+    fprintf(info->host_c, "#include \"%s\"\n", name);
+    fprintf(info->kernel_c, "#include \"%s\"\n", name);
+    fprintf(info->kernel_h, "#include \"hip.h\"\n\n");
+}
+
+/* Close all output files.
+ *  */
+void rocm_close_files(struct rocm_info *info)
+{
+    fclose(info->kernel_c);
+    fclose(info->kernel_h);
+    fclose(info->host_c);
+}
+

@@ -702,13 +702,6 @@ static __isl_give isl_printer *print_cuda(__isl_take isl_printer *p,
 
 	return p;
 }
-/*------------------------------------------------------------------------------------------------------------------------------------*/
-static __isl_give isl_printer *print_rocm(__isl_take isl_printer *p,
-        struct gpu_prog *prog, __isl_keep isl_ast_node *tree,
-        struct gpu_types *types, void *user)
-{
-	return p;
-}
 
 /* Transform the code in the file called "input" by replacing
  * all scops by corresponding CUDA code.
@@ -734,20 +727,3 @@ int generate_cuda(isl_ctx *ctx, struct ppcg_options *options,
 
 	return r;
 }
-
-
-int generate_rocm(isl_ctx *ctx, struct ppcg_options *options,
-	const char *input)
-{
-        struct rocm_info rocm;
-        int r;
-
-        rocm_open_files(&rocm, input);
-
-        r = generate_gpu(ctx, input, rocm.host_c, options, &print_rocm, &rocm);
-
-        rocm_close_files(&rocm);
-
-        return r;
-}
-
