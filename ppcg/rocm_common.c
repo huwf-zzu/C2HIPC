@@ -12,13 +12,11 @@
 #include <limits.h>
 #include <string.h>
 
-#include "cuda_common.h"
+#include "rocm_common.h"
 #include "ppcg.h"
 
-/* Open the host .cu file and the kernel .hu and .cu files for writing.
- * Add the necessary includes.
- */
-void cuda_open_files(struct cuda_info *info, const char *input)
+
+void rocm_open_files(struct rocm_info *info, const char *input)
 {
     char name[PATH_MAX];
     int len;
@@ -37,16 +35,15 @@ void cuda_open_files(struct cuda_info *info, const char *input)
     fprintf(info->host_c, "#include <stdio.h>\n");
     fprintf(info->host_c, "#include \"%s\"\n", name);
     fprintf(info->kernel_c, "#include \"%s\"\n", name);
-    fprintf(info->kernel_h, "#include \"cuda.h\"\n\n");
+    fprintf(info->kernel_h, "#include \"hip.h\"\n\n");
 }
 
 /* Close all output files.
- */
-void cuda_close_files(struct cuda_info *info)
+ *  */
+void rocm_close_files(struct rocm_info *info)
 {
     fclose(info->kernel_c);
     fclose(info->kernel_h);
     fclose(info->host_c);
 }
-
 

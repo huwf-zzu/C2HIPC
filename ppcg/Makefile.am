@@ -30,10 +30,14 @@ ppcg_SOURCES = \
 	cpu.h \
 	cuda.c \
 	cuda.h \
+	rocm.c \
+	rocm.h \
 	opencl.c \
 	opencl.h \
 	cuda_common.h \
 	cuda_common.c \
+	rocm_common.h \
+	rocm_common.c \
 	gpu.c \
 	gpu.h \
 	gpu_array_tile.c \

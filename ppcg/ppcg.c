@@ -35,6 +35,7 @@
 #include "cuda.h"
 #include "opencl.h"
 #include "cpu.h"
+#include "rocm.h"
 
 struct options {
 	struct pet_options *pet;

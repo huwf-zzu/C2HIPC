@@ -7,6 +7,4 @@
 int generate_cuda(isl_ctx *ctx, struct ppcg_options *options,
 	const char *input);
 
-int generate_rocm(isl_ctx *ctx, struct ppcg_options *options,
-	const char *input);
 #endif

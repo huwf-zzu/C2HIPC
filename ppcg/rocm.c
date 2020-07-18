@@ -10,12 +10,21 @@
 #include <isl/aff.h>
 #include <isl/ast.h>
 
-#include "cuda_common.h"
-#include "cuda.h"
+#include "rocm_common.h"
+#include "rocm.h"
 #include "gpu.h"
 #include "gpu_print.h"
 #include "print.h"
 #include "util.h"
+
+/*---------------------------tempory add this for test----------------------------------*/
+/*---------------------------actually it does not matter if we delete it-------------------*/
+struct cuda_info {
+	FILE *host_c;
+	FILE *kernel_c;
+	FILE *kernel_h;
+};
+
 
 static __isl_give isl_printer *print_cuda_macros(__isl_take isl_printer *p)
 {
@@ -683,6 +692,7 @@ static __isl_give isl_printer *print_host_code(__isl_take isl_printer *p,
  * "types" collects the types for which a definition has already
  * been printed.
  */
+ /*
 static __isl_give isl_printer *print_cuda(__isl_take isl_printer *p,
 	struct gpu_prog *prog, __isl_keep isl_ast_node *tree,
 	struct gpu_types *types, void *user)
@@ -702,6 +712,14 @@ static __isl_give isl_printer *print_cuda(__isl_take isl_printer *p,
 
 	return p;
 }
+*/
+/*------------------------------------------------------------------------------------------------------------------------------------*/
+static __isl_give isl_printer *print_rocm(__isl_take isl_printer *p,
+        struct gpu_prog *prog, __isl_keep isl_ast_node *tree,
+        struct gpu_types *types, void *user)
+{
+	return p;
+}
 
 /* Transform the code in the file called "input" by replacing
  * all scops by corresponding CUDA code.
@@ -712,7 +730,7 @@ static __isl_give isl_printer *print_cuda(__isl_take isl_printer *p,
  *
  * To prepare for this printing, we first open the output files
  * and we close them after generate_gpu has finished.
- */
+ 
 int generate_cuda(isl_ctx *ctx, struct ppcg_options *options,
 	const char *input)
 {
@@ -727,3 +745,20 @@ int generate_cuda(isl_ctx *ctx, struct ppcg_options *options,
 
 	return r;
 }
+*/
+
+int generate_rocm(isl_ctx *ctx, struct ppcg_options *options,
+	const char *input)
+{
+        struct rocm_info rocm;
+        int r;
+
+        rocm_open_files(&rocm, input);
+
+        r = generate_gpu(ctx, input, rocm.host_c, options, &print_rocm, &rocm);
+
+        rocm_close_files(&rocm);
+
+        return r;
+}
+
