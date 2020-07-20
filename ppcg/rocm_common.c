@@ -23,19 +23,19 @@ void rocm_open_files(struct rocm_info *info, const char *input)
 
     len = ppcg_extract_base_name(name, input);
 
-    strcpy(name + len, "_host.cu");
+    strcpy(name + len, "_host.hip.cpp");
     info->host_c = fopen(name, "w");
 
-    strcpy(name + len, "_kernel.cu");
+    strcpy(name + len, "_kernel.hip.cpp");
     info->kernel_c = fopen(name, "w");
 
-    strcpy(name + len, "_kernel.hu");
+    strcpy(name + len, "_kernel.hip.hpp");
     info->kernel_h = fopen(name, "w");
     fprintf(info->host_c, "#include <assert.h>\n");
     fprintf(info->host_c, "#include <stdio.h>\n");
     fprintf(info->host_c, "#include \"%s\"\n", name);
     fprintf(info->kernel_c, "#include \"%s\"\n", name);
-    fprintf(info->kernel_h, "#include \"hip.h\"\n\n");
+    fprintf(info->kernel_h, "#include \"hip/hip_runtime.h\"\n\n");
 }
 
 /* Close all output files.
