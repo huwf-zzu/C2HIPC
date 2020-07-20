@@ -109,7 +109,7 @@ static __isl_give isl_printer *allocate_device_arrays(
 		p = ppcg_ast_expr_print_macros(array->bound_expr, p);
 		p = isl_printer_start_line(p);
 		p = isl_printer_print_str(p,
-			"cudaCheckReturn(cudaMalloc((void **) &dev_");
+			"hipCheckReturn(hipMalloc((void **) &dev_");
 		p = isl_printer_print_str(p, prog->array[i].name);
 		p = isl_printer_print_str(p, ", ");
 		p = gpu_array_info_print_size(p, &prog->array[i]);
@@ -130,7 +130,7 @@ static __isl_give isl_printer *free_device_arrays(__isl_take isl_printer *p,
 		if (!gpu_array_requires_device_allocation(&prog->array[i]))
 			continue;
 		p = isl_printer_start_line(p);
-		p = isl_printer_print_str(p, "cudaCheckReturn(cudaFree(dev_");
+		p = isl_printer_print_str(p, "hipCheckReturn(hipFree(dev_");
 		p = isl_printer_print_str(p, prog->array[i].name);
 		p = isl_printer_print_str(p, "));");
 		p = isl_printer_end_line(p);
@@ -148,7 +148,7 @@ static __isl_give isl_printer *copy_array_to_device(__isl_take isl_printer *p,
 	struct gpu_array_info *array)
 {
 	p = isl_printer_start_line(p);
-	p = isl_printer_print_str(p, "cudaCheckReturn(cudaMemcpy(dev_");
+	p = isl_printer_print_str(p, "hipCheckReturn(hipMemcpy(dev_");
 	p = isl_printer_print_str(p, array->name);
 	p = isl_printer_print_str(p, ", ");
 
@@ -158,7 +158,7 @@ static __isl_give isl_printer *copy_array_to_device(__isl_take isl_printer *p,
 	p = isl_printer_print_str(p, ", ");
 
 	p = gpu_array_info_print_size(p, array);
-	p = isl_printer_print_str(p, ", cudaMemcpyHostToDevice));");
+	p = isl_printer_print_str(p, ", hipMemcpyHostToDevice));");
 	p = isl_printer_end_line(p);
 
 	return p;
@@ -173,7 +173,7 @@ static __isl_give isl_printer *copy_array_from_device(
 	__isl_take isl_printer *p, struct gpu_array_info *array)
 {
 	p = isl_printer_start_line(p);
-	p = isl_printer_print_str(p, "cudaCheckReturn(cudaMemcpy(");
+	p = isl_printer_print_str(p, "hipCheckReturn(hipMemcpy(");
 	if (gpu_array_is_scalar(array))
 		p = isl_printer_print_str(p, "&");
 	p = isl_printer_print_str(p, array->name);
@@ -181,7 +181,7 @@ static __isl_give isl_printer *copy_array_from_device(
 	p = isl_printer_print_str(p, array->name);
 	p = isl_printer_print_str(p, ", ");
 	p = gpu_array_info_print_size(p, array);
-	p = isl_printer_print_str(p, ", cudaMemcpyDeviceToHost));");
+	p = isl_printer_print_str(p, ", hipMemcpyDeviceToHost));");
 	p = isl_printer_end_line(p);
 
 	return p;
@@ -620,7 +620,7 @@ static __isl_give isl_printer *print_host_user(__isl_take isl_printer *p,
 
 	id = isl_ast_node_get_annotation(node);
 	if (!id)
-		return print_device_node(p, node, data->prog);
+		return print_device_node(p, node, data->prog);//already changed.
 
 	is_user = !strcmp(isl_id_get_name(id), "user");
 	kernel = is_user ? NULL : isl_id_get_user(id);
@@ -656,7 +656,7 @@ static __isl_give isl_printer *print_host_user(__isl_take isl_printer *p,
 	p = isl_printer_end_line(p);
 
 	p = isl_printer_start_line(p);
-	p = isl_printer_print_str(p, "cudaCheckKernel();");
+	p = isl_printer_print_str(p, "hipCheckKernel();");
 	p = isl_printer_end_line(p);
 
 	p = ppcg_end_block(p);
@@ -721,21 +721,7 @@ static __isl_give isl_printer *print_rocm(__isl_take isl_printer *p,////////////
  *
  * To prepare for this printing, we first open the output files
  * and we close them after generate_gpu has finished.
- 
-int generate_cuda(isl_ctx *ctx, struct ppcg_options *options,
-	const char *input)
-{
-	struct cuda_info cuda;
-	int r;
 
-	cuda_open_files(&cuda, input);
-
-	r = generate_gpu(ctx, input, cuda.host_c, options, &print_cuda, &cuda);
-
-	cuda_close_files(&cuda);
-
-	return r;
-}
 */
 
 int generate_rocm(isl_ctx *ctx, struct ppcg_options *options,
