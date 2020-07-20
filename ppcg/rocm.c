@@ -26,22 +26,22 @@ struct cuda_info {
 };
 
 
-static __isl_give isl_printer *print_cuda_macros(__isl_take isl_printer *p)
+static __isl_give isl_printer *print_rocm_macros(__isl_take isl_printer *p)
 {
 	const char *macros =
-		"#define cudaCheckReturn(ret) \\\n"
+		"#define hipCheckReturn(ret) \\\n"
 		"  do { \\\n"
-		"    cudaError_t cudaCheckReturn_e = (ret); \\\n"
-		"    if (cudaCheckReturn_e != cudaSuccess) { \\\n"
-		"      fprintf(stderr, \"CUDA error: %s\\n\", "
-		"cudaGetErrorString(cudaCheckReturn_e)); \\\n"
+		"    hipError_t hipCheckReturn_e = (ret); \\\n"
+		"    if (hipCheckReturn_e != hipSuccess) { \\\n"
+		"      fprintf(stderr, \"HIP error: %s\\n\", "
+		"hipGetErrorString(hipCheckReturn_e)); \\\n"
 		"      fflush(stderr); \\\n"
 		"    } \\\n"
-		"    assert(cudaCheckReturn_e == cudaSuccess); \\\n"
+		"    assert(hipCheckReturn_e == hipSuccess); \\\n"
 		"  } while(0)\n"
-		"#define cudaCheckKernel() \\\n"
+		"#define hipCheckKernel() \\\n"
 		"  do { \\\n"
-		"    cudaCheckReturn(cudaGetLastError()); \\\n"
+		"    hipCheckReturn(hipGetLastError()); \\\n"
 		"  } while(0)\n\n";
 
 	p = isl_printer_print_str(p, macros);
@@ -344,18 +344,18 @@ static __isl_give isl_printer *print_kernel_header(__isl_take isl_printer *p,
  * and gen->cuda.kernel_c.
  */
 static void print_kernel_headers(struct gpu_prog *prog,
-	struct ppcg_kernel *kernel, struct cuda_info *cuda)
+	struct ppcg_kernel *kernel, struct rocm_info *rocm)
 {
 	isl_printer *p;
 
-	p = isl_printer_to_file(prog->ctx, cuda->kernel_h);
+	p = isl_printer_to_file(prog->ctx, rocm->kernel_h);
 	p = isl_printer_set_output_format(p, ISL_FORMAT_C);
 	p = print_kernel_header(p, prog, kernel);
 	p = isl_printer_print_str(p, ";");
 	p = isl_printer_end_line(p);
 	isl_printer_free(p);
 
-	p = isl_printer_to_file(prog->ctx, cuda->kernel_c);
+	p = isl_printer_to_file(prog->ctx, rocm->kernel_c);
 	p = isl_printer_set_output_format(p, ISL_FORMAT_C);
 	p = print_kernel_header(p, prog, kernel);
 	p = isl_printer_end_line(p);
@@ -373,7 +373,7 @@ static void print_indent(FILE *dst, int indent)
  * (the first in the list of cuda identifiers).
  */
 static void print_iterators(FILE *out, const char *type,
-	__isl_keep isl_id_list *ids, const char *cuda_dims[])
+	__isl_keep isl_id_list *ids, const char *rocm_dims[])
 {
 	int i, n;
 
@@ -389,7 +389,7 @@ static void print_iterators(FILE *out, const char *type,
 			fprintf(out, ", ");
 		id = isl_id_list_get_id(ids, i);
 		fprintf(out, "%s = %s", isl_id_get_name(id),
-			cuda_dims[n - 1 - i]);
+			rocm_dims[n - 1 - i]);
 		isl_id_free(id);
 	}
 	fprintf(out, ";\n");
@@ -487,17 +487,17 @@ static __isl_give isl_printer *print_kernel_stmt(__isl_take isl_printer *p,
 }
 
 static void print_kernel(struct gpu_prog *prog, struct ppcg_kernel *kernel,
-	struct cuda_info *cuda)
+	struct rocm_info *rocm)
 {
 	isl_ctx *ctx = isl_ast_node_get_ctx(kernel->tree);
 	isl_ast_print_options *print_options;
 	isl_printer *p;
 
-	print_kernel_headers(prog, kernel, cuda);
-	fprintf(cuda->kernel_c, "{\n");
-	print_kernel_iterators(cuda->kernel_c, kernel);
+	print_kernel_headers(prog, kernel, rocm);
+	fprintf(rocm->kernel_c, "{\n");
+	print_kernel_iterators(rocm->kernel_c, kernel);
 
-	p = isl_printer_to_file(ctx, cuda->kernel_c);
+	p = isl_printer_to_file(ctx, rocm->kernel_c);
 	p = isl_printer_set_output_format(p, ISL_FORMAT_C);
 	p = isl_printer_indent(p, 4);
 
@@ -512,7 +512,7 @@ static void print_kernel(struct gpu_prog *prog, struct ppcg_kernel *kernel,
 	p = isl_ast_node_print(kernel->tree, p, print_options);
 	isl_printer_free(p);
 
-	fprintf(cuda->kernel_c, "}\n");
+	fprintf(rocm->kernel_c, "}\n");
 }
 
 /* Print code for initializing the device for execution of the transformed
@@ -522,7 +522,7 @@ static void print_kernel(struct gpu_prog *prog, struct ppcg_kernel *kernel,
 static __isl_give isl_printer *init_device(__isl_take isl_printer *p,
 	struct gpu_prog *prog)
 {
-	p = print_cuda_macros(p);
+	p = print_rocm_macros(p);
 
 	p = gpu_print_local_declarations(p, prog);
 	p = declare_device_arrays(p, prog);
@@ -587,7 +587,7 @@ static __isl_give isl_printer *print_device_node(__isl_take isl_printer *p,
 }
 
 struct print_host_user_data {
-	struct cuda_info *cuda;
+	struct rocm_info *rocm;
 	struct gpu_prog *prog;
 };
 
@@ -664,18 +664,18 @@ static __isl_give isl_printer *print_host_user(__isl_take isl_printer *p,
 	p = isl_printer_start_line(p);
 	p = isl_printer_end_line(p);
 
-	print_kernel(data->prog, kernel, data->cuda);
+	print_kernel(data->prog, kernel, data->rocm);
 
 	return p;
 }
 
 static __isl_give isl_printer *print_host_code(__isl_take isl_printer *p,
 	struct gpu_prog *prog, __isl_keep isl_ast_node *tree,
-	struct cuda_info *cuda)
+	struct rocm_info *rocm)
 {
 	isl_ast_print_options *print_options;
 	isl_ctx *ctx = isl_ast_node_get_ctx(tree);
-	struct print_host_user_data data = { cuda, prog };
+	struct print_host_user_data data = { rocm, prog };
 
 	print_options = isl_ast_print_options_alloc(ctx);
 	print_options = isl_ast_print_options_set_print_user(print_options,
@@ -688,19 +688,19 @@ static __isl_give isl_printer *print_host_code(__isl_take isl_printer *p,
 }
 
 /* Given a gpu_prog "prog" and the corresponding transformed AST
- * "tree", print the entire CUDA code to "p".
+ * "tree", print the entire ROCm/HIP code to "p".
  * "types" collects the types for which a definition has already
  * been printed.
  */
- /*
-static __isl_give isl_printer *print_cuda(__isl_take isl_printer *p,
-	struct gpu_prog *prog, __isl_keep isl_ast_node *tree,
-	struct gpu_types *types, void *user)
+ 
+static __isl_give isl_printer *print_rocm(__isl_take isl_printer *p,////////////////type参数？
+        struct gpu_prog *prog, __isl_keep isl_ast_node *tree,
+        struct gpu_types *types, void *user)
 {
-	struct cuda_info *cuda = user;
+	struct rocm_info *rocm = user;
 	isl_printer *kernel;
 
-	kernel = isl_printer_to_file(isl_printer_get_ctx(p), cuda->kernel_c);
+	kernel = isl_printer_to_file(isl_printer_get_ctx(p), rocm->kernel_c);
 	kernel = isl_printer_set_output_format(kernel, ISL_FORMAT_C);
 	kernel = gpu_print_types(kernel, types, prog);
 	isl_printer_free(kernel);
@@ -708,16 +708,7 @@ static __isl_give isl_printer *print_cuda(__isl_take isl_printer *p,
 	if (!kernel)
 		return isl_printer_free(p);
 
-	p = print_host_code(p, prog, tree, cuda);
-
-	return p;
-}
-*/
-/*------------------------------------------------------------------------------------------------------------------------------------*/
-static __isl_give isl_printer *print_rocm(__isl_take isl_printer *p,
-        struct gpu_prog *prog, __isl_keep isl_ast_node *tree,
-        struct gpu_types *types, void *user)
-{
+	p = print_host_code(p, prog, tree, rocm);
 	return p;
 }
 
