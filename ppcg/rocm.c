@@ -399,9 +399,14 @@ static void print_kernel_iterators(FILE *out, struct ppcg_kernel *kernel)
 {
 	isl_ctx *ctx = isl_ast_node_get_ctx(kernel->tree);
 	const char *type;
+	/*
 	const char *block_dims[] = { "blockIdx.x", "blockIdx.y" };
 	const char *thread_dims[] = { "threadIdx.x", "threadIdx.y",
 					"threadIdx.z" };
+*/
+	const char *block_dims[] = { "hipBlockIdx_x", "hipBlockIdx_y" };
+	const char *thread_dims[] = { "hipThreadIdx_x", "hipThreadIdx_y",
+					"hipThreadIdx_z" };
 
 	type = isl_options_get_ast_iterator_type(ctx);
 
@@ -644,13 +649,14 @@ static __isl_give isl_printer *print_host_user(__isl_take isl_printer *p,
 	p = print_grid(p, kernel);
 
 	p = isl_printer_start_line(p);
+	p = isl_printer_print_str(p, "hipLaunchKernelGGL(");
 	p = isl_printer_print_str(p, "kernel");
 	p = isl_printer_print_int(p, kernel->id);
-	p = isl_printer_print_str(p, " <<<k");
+	p = isl_printer_print_str(p, ", k");////hipLaunchKernelGGL(kernel0, k0_dimGrid, k0_dimblock, 0, 0, args);
 	p = isl_printer_print_int(p, kernel->id);
 	p = isl_printer_print_str(p, "_dimGrid, k");
 	p = isl_printer_print_int(p, kernel->id);
-	p = isl_printer_print_str(p, "_dimBlock>>> (");
+	p = isl_printer_print_str(p, "_dimBlock, 0, 0, ");//@@@@@@@@[shared memory allocated by host] and [stream size] args are 0 now!!!
 	p = print_kernel_arguments(p, data->prog, kernel, 0);
 	p = isl_printer_print_str(p, ");");
 	p = isl_printer_end_line(p);
