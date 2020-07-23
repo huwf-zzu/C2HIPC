@@ -74,6 +74,7 @@ run_tests () {
 		$CPPFLAGS	$ppcg_options || exit
 		cd ..
 	done
+	cp ../run_ppcg_gen_polybench.sh ./
 }
 
 run_tests ppcg "--target=cuda"
