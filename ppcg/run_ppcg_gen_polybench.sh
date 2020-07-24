@@ -3,7 +3,7 @@
 EXE_OUTPUT=result_exe
 GPUCC=nvcc
 GPUCC_OPTIONS=
-POLYBENCH_DIR=/home/hanlin/huwf/work/polybench 
+POLYBENCH_DIR=@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
 POLYBENCH_OPTIONS= "-DPOLYBENCH_TIME -DLARGE_DATASET"
 H_TAIL=_host.cu
 K_TAIL=_kernel.cu
