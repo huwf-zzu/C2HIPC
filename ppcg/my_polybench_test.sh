@@ -3,6 +3,7 @@
 keep=yes
 verbose=yes
 
+VERSION=TEST
 for option; do
 	case "$option" in
 		--keep)
@@ -11,19 +12,22 @@ for option; do
 		--verbose)
 			verbose=yes
 			;;
+		*)
+			VERSION=$option
+			;;
+
 	esac
 done
-
+echo $option
 EXEEXT=
 DIR=/raid/huwf_dev/run/polybench-c-4.2.1-beta
-VERSION=TEST
-SIZE=-DMINI_DATASET
-CC="gcc"
 HAVE_OPENCL=no
 HAVE_OPENMP=no
 srcdir="."
+CPPFLAGS="  -I $DIR/utilities -DPOLYBENCH_USE_C99_PROTO -DPOLYBENCH_DUMP_ARRAYS"
 if [ $keep = "yes" ]; then
-	OUTDIR="out.$VERSION"
+	OUTDIR="${VERSION}_prog"
+	echo "output -> $OUTDIR"
 	mkdir -p "$OUTDIR" || exit 1
 else
 	if test "x$TMPDIR" = "x"; then
@@ -31,11 +35,7 @@ else
 	fi
 	OUTDIR=`mktemp -d $TMPDIR/ppcg.XXXXXXXXXX` || exit 1
 fi
-CPPFLAGS="-DPOLYBENCH_USE_C99_PROTO -DPOLYBENCH_DUMP_ARRAYS"
-CPPFLAGS="$CPPFLAGS $SIZE -I $DIR/utilities"
-CFLAGS="-lm --std=gnu99"
 
-echo "Running tests in folder ${OUTDIR}"
 
 run_tests () {
 	ext=$1

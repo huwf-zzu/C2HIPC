@@ -2,9 +2,9 @@
 
 EXE_OUTPUT=result_exe
 GPUCC=nvcc
-GPUCC_OPTIONS=
-POLYBENCH_DIR=@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
-POLYBENCH_OPTIONS= "-DPOLYBENCH_TIME -DLARGE_DATASET"
+GPUCC_OPTIONS="-lm"
+POLYBENCH_DIR=~/work/polybench-c-4.2.1-beta
+POLYBENCH_OPTIONS="-DPOLYBENCH_TIME -DLARGE_DATASET"
 H_TAIL=_host.cu
 K_TAIL=_kernel.cu
 
