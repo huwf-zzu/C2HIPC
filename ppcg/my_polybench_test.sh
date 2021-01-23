@@ -76,7 +76,6 @@ run_tests () {
 	done
 	cp ../run_ppcg_gen_polybench.sh ./
 	cd ..
-	scp -r ${OUTDIR} huwf@192.168.7.154:/home/huwf/work/run/
 }
 
 run_tests ppcg "--target=cuda"
