@@ -7099,10 +7099,8 @@ static isl_bool try_merge(isl_ctx *ctx, struct isl_sched_graph *graph,
 		goto error;
 	if (compute_schedule_wcc_band(ctx, &merge_graph) < 0)
 		goto error;
-	if(ctx->opt->schedule_kernel_partition){
+	if(ctx->opt->schedule_kernel_partition)
 		merged = ok_to_merge_kernel_partition(ctx, graph, c, &merge_graph);
-		errs()<<"test for depolyment."<<"\n";
-	}	
 	else 
 		merged = ok_to_merge(ctx, graph, c, &merge_graph);
 	if (merged && merge(ctx, c, &merge_graph) < 0)

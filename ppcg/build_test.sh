@@ -3,7 +3,7 @@
 INSTALL_ENV_PATH=/home/huwf/compiler/other_env/set_ppcg_install.sh
 
 #get submodule
-#cp /raid/huwf_dev/build/c2hipc_v0.11/pet ./ -r
+cp /raid/huwf_dev/build/c2hipc_v0.11/pet ./ -r
 
 ./autogen.sh
 
