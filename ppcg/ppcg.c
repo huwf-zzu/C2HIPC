@@ -1070,7 +1070,7 @@ int main(int argc, char **argv)
 	options = options_new_with_defaults();
 	assert(options);
 
-	ctx = isl_ctx_alloc_with_options(&options_args, options);
+	ctx = isl_ctx_alloc_with_options(&options_args, options);/// general fusion options
 	ppcg_options_set_target_defaults(options->ppcg);
 	isl_options_set_ast_build_detect_min_max(ctx, 1);
 	isl_options_set_ast_print_macro_once(ctx, 1);

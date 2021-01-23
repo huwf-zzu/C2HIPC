@@ -69,6 +69,8 @@ struct isl_options {
 
 	int			print_stats;
 	unsigned long		max_operations;
+
+	int			schedule_kernel_partition;
 };
 
 #endif

@@ -6904,6 +6904,30 @@ static isl_bool ok_to_merge(isl_ctx *ctx, struct isl_sched_graph *graph,
 	return ok_to_merge_proximity(ctx, graph, c, merge_graph);
 }
 
+static isl_bool ok_to_merge_kernel_partition(isl_ctx *ctx, struct isl_sched_graph *graph,
+	struct isl_clustering *c, struct isl_sched_graph *merge_graph)
+{
+	isl_bool outermost_band = isl_bool_false;
+	if (merge_graph->n_total_row == merge_graph->band_start)
+		return isl_bool_false;
+	if (graph->n_total_row == 0)
+		outermost_band = isl_bool_true;
+	if (isl_options_get_schedule_maximize_band_depth(ctx) &&
+	    merge_graph->n_total_row < merge_graph->maxvar && outermost_band)
+		return isl_bool_false;
+
+	if (isl_options_get_schedule_maximize_coincidence(ctx)) {
+		isl_bool ok;
+
+		ok = ok_to_merge_coincident(c, merge_graph);
+		if (ok < 0 || !ok)
+			return ok;
+	}
+
+	return ok_to_merge_proximity(ctx, graph, c, merge_graph);
+}
+
+
 /* Apply the schedule in "t_node" to the "n" rows starting at "first"
  * of the schedule in "node" and return the result.
  *
@@ -7075,7 +7099,10 @@ static isl_bool try_merge(isl_ctx *ctx, struct isl_sched_graph *graph,
 		goto error;
 	if (compute_schedule_wcc_band(ctx, &merge_graph) < 0)
 		goto error;
-	merged = ok_to_merge(ctx, graph, c, &merge_graph);
+	if(ctx->opt->schedule_kernel_partition)
+		merged = ok_to_merge_kernel_partition(ctx, graph, c, &merge_graph);
+	else 
+		merged = ok_to_merge(ctx, graph, c, &merge_graph);
 	if (merged && merge(ctx, c, &merge_graph) < 0)
 		goto error;
 
