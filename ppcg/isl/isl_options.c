@@ -160,6 +160,9 @@ ISL_ARG_BOOL(struct isl_options, schedule_maximize_coincidence, 0,
 ISL_ARG_BOOL(struct isl_options, schedule_kernel_partition, 0,///##add isl options
 	"schedule-kernel-partition", 0,
 	"use fusion constraints for gpu kernel partition.")
+ISL_ARG_BOOL(struct isl_options, schedule_limit_block_band, 0,///##add isl options
+	"schedule-limit-block-band", 0,
+	"limit the number of parallel loops that map to blocks to 2 for reducing the control flow.")
 ISL_ARG_BOOL(struct isl_options, schedule_split_scaled, 0,
 	"schedule-split-scaled", 1,
 	"split non-tilable bands with scaled schedules")
@@ -281,6 +284,10 @@ ISL_CTX_SET_BOOL_DEF(isl_options, struct isl_options, isl_options_args,
 	schedule_kernel_partition)
 ISL_CTX_GET_BOOL_DEF(isl_options, struct isl_options, isl_options_args,
 	schedule_kernel_partition)
+ISL_CTX_SET_BOOL_DEF(isl_options, struct isl_options, isl_options_args,
+	schedule_limit_block_band)
+ISL_CTX_GET_BOOL_DEF(isl_options, struct isl_options, isl_options_args,
+	schedule_limit_block_band)
 
 ISL_CTX_SET_BOOL_DEF(isl_options, struct isl_options, isl_options_args,
 	schedule_split_scaled)

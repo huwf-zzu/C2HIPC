@@ -5907,6 +5907,70 @@ static isl_stat compute_schedule_wcc_band(isl_ctx *ctx,
 	return isl_stat_ok;
 }
 
+///compute schedule for outermost parallel band, we limit the band member to 2 
+///for the block level mapping.
+static isl_stat compute_schedule_wcc_band_for_outermost(isl_ctx *ctx,
+	struct isl_sched_graph *graph)
+{
+	int has_coincidence;
+	int use_coincidence;
+	int force_coincidence = 0;
+	int check_conditional;
+	int end_row = graph->n_row + 2;
+
+	if (sort_sccs(graph) < 0)
+		return isl_stat_error;
+
+	clear_local_edges(graph);
+	check_conditional = need_condition_check(graph);
+	has_coincidence = has_any_coincidence(graph);
+
+	if (ctx->opt->schedule_outer_coincidence)
+		force_coincidence = 1;
+
+	use_coincidence = has_coincidence;
+	while (graph->n_row < end_row) {
+		isl_vec *sol;
+		int violated;
+		int coincident;
+
+		graph->src_scc = -1;
+		graph->dst_scc = -1;
+
+		if (setup_lp(ctx, graph, use_coincidence) < 0)
+			return isl_stat_error;
+		sol = solve_lp(ctx, graph);
+		if (!sol)
+			return isl_stat_error;
+		if (sol->size == 0) {
+			int empty = graph->n_total_row == graph->band_start;
+
+			isl_vec_free(sol);
+			if (use_coincidence && (!force_coincidence || !empty)) {
+				use_coincidence = 0;
+				continue;
+			}
+			return isl_stat_ok;
+		}
+		coincident = !has_coincidence || use_coincidence;
+		if (update_schedule(graph, sol, coincident) < 0)
+			return isl_stat_error;
+
+		if (!check_conditional)
+			continue;
+		violated = has_violated_conditional_constraint(ctx, graph);
+		if (violated < 0)
+			return isl_stat_error;
+		if (!violated)
+			continue;
+		if (reset_band(graph) < 0)
+			return isl_stat_error;
+		use_coincidence = has_coincidence;
+	}
+
+	return isl_stat_ok;
+}
+
 /* Compute a schedule for a connected dependence graph by considering
  * the graph as a whole and return the updated schedule node.
  *
@@ -6628,8 +6692,8 @@ static isl_bool ok_to_merge_coincident(struct isl_clustering *c,
 ///check if there is at least one parallel member in merge graph. when the 
 ///outermost band does not have coincidence member, we are going to merge 
 ///parallel loops as much as possible for reducing the kernel start up cost.
-static isl_bool ok_to_merge_coincident_for_one_member(struct isl_clustering *c,
-	struct isl_sched_graph *merge_graph)
+static isl_bool ok_to_merge_coincident_at_least(struct isl_clustering *c,
+	struct isl_sched_graph *merge_graph, int n)
 {
 	int i;
 	int n_coincident;
@@ -6645,8 +6709,8 @@ static isl_bool ok_to_merge_coincident_for_one_member(struct isl_clustering *c,
 	}
 
 	n_coincident = get_n_coincident(merge_graph);
-	if(max_coincident >= 1)
-		return isl_bool_ok(n_coincident >= 1);
+	if(n_coincident >= max_coincident || n_coincident >= n)
+		return isl_bool_true;
 	return isl_bool_false;
 }
 
@@ -6937,8 +7001,8 @@ static isl_bool ok_to_merge_kernel_partition(isl_ctx *ctx, struct isl_sched_grap
 	if (merge_graph->n_total_row == merge_graph->band_start)
 		return isl_bool_false;
 		
-	if (graph->n_total_row == 1 && !get_n_coincident(graph))
-		return ok_to_merge_coincident_for_one_member(c, merge_graph);
+	if (graph->n_total_row > 0 && !get_n_coincident(graph))
+		return ok_to_merge_coincident_at_least(c, merge_graph, 1);
 	
 	if (isl_options_get_schedule_maximize_band_depth(ctx) &&
 	    merge_graph->n_total_row < merge_graph->maxvar)
@@ -6946,12 +7010,16 @@ static isl_bool ok_to_merge_kernel_partition(isl_ctx *ctx, struct isl_sched_grap
 
 	if (isl_options_get_schedule_maximize_coincidence(ctx)) {
 		isl_bool ok;
-
-		ok = ok_to_merge_coincident(c, merge_graph);
-		if (ok < 0 || !ok)
-			return ok;
+		if (!get_n_coincident(graph)){////outermost band with parallel member
+			ok = ok_to_merge_coincident_at_least(c, merge_graph, 2);
+			if (ok < 0 || !ok)
+				return ok;
+		}else{
+			ok = ok_to_merge_coincident(c, merge_graph);
+			if (ok < 0 || !ok)
+				return ok;
+		}
 	}
-
 	return ok_to_merge_proximity(ctx, graph, c, merge_graph);
 }
 
@@ -7125,8 +7193,13 @@ static isl_bool try_merge(isl_ctx *ctx, struct isl_sched_graph *graph,
 		goto error;
 	if (adjust_maxvar_to_slack(ctx, &merge_graph,c) < 0)
 		goto error;
-	if (compute_schedule_wcc_band(ctx, &merge_graph) < 0)
-		goto error;
+	if(ctx->opt->schedule_limit_block_band && graph->n_total_row == 0){
+		if (compute_schedule_wcc_band_for_outermost(ctx, &merge_graph) < 0)
+			goto error;	
+	}else{
+		if (compute_schedule_wcc_band(ctx, &merge_graph) < 0)
+			goto error;	
+	}
 	if(ctx->opt->schedule_kernel_partition)
 		merged = ok_to_merge_kernel_partition(ctx, graph, c, &merge_graph);
 	else 

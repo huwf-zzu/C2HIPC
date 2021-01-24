@@ -71,6 +71,7 @@ struct isl_options {
 	unsigned long		max_operations;
 
 	int			schedule_kernel_partition;
+	int			schedule_limit_block_band;
 };
 
 #endif

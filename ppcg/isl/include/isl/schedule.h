@@ -31,6 +31,8 @@ int isl_options_get_schedule_maximize_coincidence(isl_ctx *ctx);
 //##add isl options
 isl_stat isl_options_set_schedule_kernel_partition(isl_ctx *ctx, int val);
 int isl_options_get_schedule_kernel_partition(isl_ctx *ctx);
+isl_stat isl_options_set_schedule_limit_block_band(isl_ctx *ctx, int val);
+int isl_options_get_schedule_limit_block_band(isl_ctx *ctx);
 
 isl_stat isl_options_set_schedule_outer_coincidence(isl_ctx *ctx, int val);
 int isl_options_get_schedule_outer_coincidence(isl_ctx *ctx);
