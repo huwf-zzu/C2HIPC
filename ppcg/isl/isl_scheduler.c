@@ -6625,6 +6625,31 @@ static isl_bool ok_to_merge_coincident(struct isl_clustering *c,
 	return isl_bool_ok(n_coincident >= max_coincident);
 }
 
+///check if there is at least one parallel member in merge graph. when the 
+///outermost band does not have coincidence member, we are going to merge 
+///parallel loops as much as possible for reducing the kernel start up cost.
+static isl_bool ok_to_merge_coincident_for_one_member(struct isl_clustering *c,
+	struct isl_sched_graph *merge_graph)
+{
+	int i;
+	int n_coincident;
+	int max_coincident;
+
+	max_coincident = 0;
+	for (i = 0; i < c->n; ++i) {
+		if (!c->scc_in_merge[i])
+			continue;
+		n_coincident = get_n_coincident(&c->scc[i]);
+		if (n_coincident > max_coincident)
+			max_coincident = n_coincident;
+	}
+
+	n_coincident = get_n_coincident(merge_graph);
+	if(max_coincident >= 1)
+		return isl_bool_ok(n_coincident >= 1);
+	return isl_bool_false;
+}
+
 /* Return the transformation on "node" expressed by the current (and only)
  * band of "merge_graph" applied to the clusters in "c".
  *
@@ -6907,13 +6932,16 @@ static isl_bool ok_to_merge(isl_ctx *ctx, struct isl_sched_graph *graph,
 static isl_bool ok_to_merge_kernel_partition(isl_ctx *ctx, struct isl_sched_graph *graph,
 	struct isl_clustering *c, struct isl_sched_graph *merge_graph)
 {
-	isl_bool outermost_band = isl_bool_false;
+	int n_coincidence = 0;
+
 	if (merge_graph->n_total_row == merge_graph->band_start)
 		return isl_bool_false;
-	if (graph->n_total_row == 0)
-		outermost_band = isl_bool_true;
+		
+	if (graph->n_total_row == 1 && !get_n_coincident(graph))
+		return ok_to_merge_coincident_for_one_member(c, merge_graph);
+	
 	if (isl_options_get_schedule_maximize_band_depth(ctx) &&
-	    merge_graph->n_total_row < merge_graph->maxvar && outermost_band)
+	    merge_graph->n_total_row < merge_graph->maxvar)
 		return isl_bool_false;
 
 	if (isl_options_get_schedule_maximize_coincidence(ctx)) {
