@@ -411,6 +411,10 @@ struct ppcg_kernel {
 	isl_ast_node *tree;
 };
 
+struct permutate_info {
+	
+};
+
 int gpu_array_is_scalar(struct gpu_array_info *array);
 int gpu_array_is_read_only_scalar(struct gpu_array_info *array);
 int gpu_array_requires_device_allocation(struct gpu_array_info *array);

@@ -5603,6 +5603,37 @@ static struct gpu_stmt *extract_stmts(isl_ctx *ctx, struct ppcg_scop *scop,
 	return stmts;
 }
 
+static __isl_give isl_schedule *calculate_best_permutated_order(struct gpu_gen *gen,
+struct ppcg_scop *scop, __isl_take isl_schedule *schedule)
+{
+	return schedule;
+}
+static isl_bool check_permutated_schedule(__isl_take isl_schedule *schedule)
+{
+	return isl_bool_true;
+}
+
+/* Get all stmts array access info and schedule, try to find all the permutation choices provided by
+the calculated schedule tree. Choose the best one for colasced global memory access.
+*/
+static __isl_give isl_schedule *permute_for_global_memory_access(struct gpu_gen *gen,
+struct ppcg_scop *scop, __isl_take isl_schedule *schedule)
+{
+	isl_union_map access_map;
+	permutate_order *permutate_order;
+
+	check_permutated_schedule(schedule, permutate_order);
+
+	access_map = isl_union_map_union(isl_union_map_copy(prog->read),
+				     isl_union_map_copy(prog->may_write));
+	access_map = isl_union_map_intersect_domain(access_map, prog->domain);
+
+	schedule = calculate_best_permutated_order(gen, scop, schedule);
+
+	permutate_order_free(permutate_order);
+	return schedule;
+}
+
 /* Generate CUDA code for "scop" and print it to "p".
  * After generating an AST for the transformed scop as explained below,
  * we call "gen->print" to print the AST in the desired output format
@@ -5690,6 +5721,7 @@ static __isl_give isl_printer *generate(__isl_take isl_printer *p,
 			p = print_cpu(p, scop, options);
 		isl_schedule_free(schedule);
 	} else {
+		schedule = permute_for_global_memory_access(gen, scop, schedule);
 		schedule = map_to_device(gen, schedule);
 		gen->tree = generate_code(gen, schedule);
 		p = ppcg_set_macro_names(p);
